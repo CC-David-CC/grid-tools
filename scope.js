@@ -1,0 +1,10 @@
+// Keep each signed-in account's Grid.Space browser workspace separate.
+(()=>{
+ const scope=new URL(location.href).searchParams.get('account');if(!/^user:[a-f0-9-]{36}$/i.test(scope||''))throw Error('A signed-in account is required.');
+ const prefix='codi-grid/'+scope+'/',raw=window.localStorage;
+ const storage=new Proxy(raw,{get(target,key){if(key==='getItem')return k=>target.getItem(prefix+k);if(key==='setItem')return (k,v)=>target.setItem(prefix+k,v);if(key==='removeItem')return k=>target.removeItem(prefix+k);if(key==='clear')return ()=>{for(let i=target.length-1;i>=0;i--){const k=target.key(i);if(k.startsWith(prefix))target.removeItem(k);}};if(key==='key')return i=>Array.from({length:target.length},(_,n)=>target.key(n)).filter(k=>k.startsWith(prefix))[i]?.slice(prefix.length)||null;if(key==='length')return Array.from({length:target.length},(_,n)=>target.key(n)).filter(k=>k.startsWith(prefix)).length;if(typeof key==='string')return target.getItem(prefix+key)??undefined;return Reflect.get(target,key,target);},set(target,key,value){target.setItem(prefix+key,value);return true;},deleteProperty(target,key){target.removeItem(prefix+key);return true;}});
+ Object.defineProperty(window,'localStorage',{value:storage});
+ const factory=window.indexedDB,open=factory.open.bind(factory),drop=factory.deleteDatabase.bind(factory);factory.open=(name,...rest)=>open(prefix+name,...rest);factory.deleteDatabase=(name,...rest)=>drop(prefix+name,...rest);
+ const urls=new Map(),create=URL.createObjectURL.bind(URL),revoke=URL.revokeObjectURL.bind(URL),click=HTMLAnchorElement.prototype.click;URL.createObjectURL=blob=>{const url=create(blob);urls.set(url,blob);return url;};URL.revokeObjectURL=url=>{urls.delete(url);revoke(url);};
+ HTMLAnchorElement.prototype.click=function(){if(this.hasAttribute('download')){const blob=urls.get(this.href);if(!blob){alert('This export cannot be saved to Files.');return;}if(blob.size>8*1024*1024){alert('Files are limited to 8 MiB.');return;}blob.arrayBuffer().then(bytes=>parent.postMessage({type:'codi-grid-export',name:this.download,bytes},location.origin,[bytes]));return;}return click.call(this);};
+})();
