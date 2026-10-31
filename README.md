@@ -27,3 +27,5 @@ it is not a security boundary against other trusted same-origin application code
 The embedded controls are upstream desktop-oriented interfaces; a phone-sized automated workflow does not establish that every control is touch-friendly. Kiri workspace snapshots are explicit saves, not continuous synchronization. Mesh:Tool snapshots are also explicit saves; export fabrication results to My files separately. Printer profiles, resulting G-code, mesh repair and fabrication safety require independent verification.
 
 Export saves capture the chosen destination when Save export is pressed, even if the filename changes while storage responds. Existing-file checks use metadata rather than rereading the full model; an immediate conflict is reported for resolution in Files. Workspace snapshot writes also report immediate conflicts.
+
+When synchronization finds that a saved workspace has changed, was deleted, or has conflicting copies, a notice stays visible without replacing the open model. Save a copy or reopen the workspace as appropriate. The warning checks the browser mirror; it does not guarantee instant detection of changes on another device before synchronization.
