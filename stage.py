@@ -31,7 +31,7 @@ def js(data):
 """+s[b:]
  s=s.replace('"/wasm/kiri-sla.wasm"','new URL("../../../wasm/kiri-sla.wasm", import.meta.url).href').replace('"/wasm/kiri-geo.wasm"','new URL("../../../wasm/kiri-geo.wasm", import.meta.url).href').replace('"/lib/gpu/raster-worker.js"','new URL("../../gpu/raster-worker.js", import.meta.url).href');return s.encode()
 for source,destination in [('src/pack/kiri-main.js','lib/main/kiri.js'),('src/pack/mesh-main.js','lib/main/mesh.js'),('src/pack/kiri-work.js','lib/kiri/run/worker.js'),('src/pack/kiri-pool.js','lib/kiri/run/minion.js'),('src/pack/mesh-work.js','lib/mesh/work.js')]:put(source,destination,js)
-with (out/'lib/main/mesh.js').open('a') as f:f.write('\nwindow.codiLoadFiles = load_files;\n')
+with (out/'lib/main/mesh.js').open('a') as f:f.write('\nwindow.codiLoadFiles = load_files;\n'+(HERE/'mesh-bridge.js').read_text())
 put('web/obj/cube.stl','obj/cube.stl')
 for name in ['kiri-sla.wasm','kiri-geo.wasm','kiri-ani.wasm','manifold.wasm']:put('src/wasm/'+name,'wasm/'+name)
 for dest in ['lib/kiri/wasm/manifold.wasm','lib/wasm/manifold.wasm']:put('src/wasm/manifold.wasm',dest)
