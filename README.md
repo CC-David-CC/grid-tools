@@ -2,8 +2,7 @@
 
 These two desktop entries share a lazy-loaded, locally packaged Grid.Space
 browser build. Kiri:Moto provides slicing; Mesh:Tool edits and repairs meshes.
-Use Open from Files to load an account-mirrored model; upstream export actions
-are redirected into Files and use version checks. `.stl`, `.obj`, and `.3mf`
+Use Open from My files to load an account-mirrored model. Upload a model from your computer in Files first. Upstream export actions open a save panel where you can choose a My files folder and name; replacements require confirmation and use version checks. A pending export prompts before its window closes. `.stl`, `.obj`, and `.3mf`
 files opened in Files launch Mesh:Tool. The embedded workspace and printer
 settings live in the current account's browser storage; they are not yet synced
 as a project to the server. Export files to Files to sync them. The apps do not
@@ -26,3 +25,5 @@ not been comprehensively tested. Verify the printer profile and output yourself.
 
 Workspace namespacing prevents accidental cross-account reuse in this desktop;
 it is not a security boundary against other trusted same-origin application code.
+
+The embedded controls are upstream desktop-oriented interfaces; a phone-sized automated workflow does not establish that every control is touch-friendly. A workspace is not an account-synced project: export results to My files. Printer profiles, resulting G-code, mesh repair and fabrication safety require independent verification.
