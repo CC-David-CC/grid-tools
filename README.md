@@ -67,3 +67,9 @@ as finite 32-bit floats, and checks the restored vertex values against the
 32-bit conversion in a temporary editor before replacing the current workspace.
 This catches lost or changed geometry in that import path; it is not a complete
 validation of every setting, model format, slicer operation or printer output.
+
+Mesh:Tool project snapshots reject invalid typed-array values before opening or
+saving, including integers outside their array's range and non-finite or
+unrepresentable 32-bit float values. A rejected project leaves the current
+workspace open. This protects against these conversion errors; it does not
+establish that every third-party project field is supported.
