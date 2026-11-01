@@ -61,3 +61,9 @@ and emulated-phone tests cover both Kiri:Moto and Mesh:Tool with an invalid
 workspace, model import, snapshot save/server sync and refresh; phone-sized
 missing-file tests cover the fallback. Physical touch and machine output remain
 unverified.
+
+Kiri workspace import rejects geometry coordinates that cannot be represented
+as finite 32-bit floats, and checks the restored vertex values against the
+32-bit conversion in a temporary editor before replacing the current workspace.
+This catches lost or changed geometry in that import path; it is not a complete
+validation of every setting, model format, slicer operation or printer output.
