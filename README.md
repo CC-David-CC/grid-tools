@@ -42,3 +42,6 @@ Export saves capture the chosen destination when Save export is pressed, even if
 When synchronization finds that a saved workspace has changed, was deleted, or has conflicting copies, a notice stays visible without replacing the open model. Save a copy or reopen the workspace as appropriate. The warning checks the browser mirror; it does not guarantee instant detection of changes on another device before synchronization.
 
 Workspace and export replacement use desktop confirmations. Changing a saved target while confirmation is open prevents replacement. When opening a workspace, the app also compares the current model and settings before and after confirmation and refuses to replace changed work; camera movement and Kiri's internal save timestamp are excluded from that comparison. Browser-local state and user changes made after a snapshot still require a new save.
+
+Closing asks for confirmation while a workspace snapshot is being saved. A
+write already sent to storage may still complete after the window closes.
