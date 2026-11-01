@@ -49,6 +49,14 @@ When synchronization finds that a saved workspace has changed, was deleted, or h
 
 Workspace and export replacement use desktop confirmations. Changing a saved target while confirmation is open prevents replacement. When opening a workspace, the app also compares the current model and settings before and after confirmation and refuses to replace changed work; camera movement and Kiri's internal save timestamp are excluded from that comparison. Browser-local state and user changes made after a snapshot still require a new save.
 
+If opening a workspace and restoring the previous one both fail, a persistent
+warning marks the current workspace uncertain. Saving workspace snapshots and
+exports is blocked until a saved workspace is opened successfully; closing asks
+for confirmation. Desktop and emulated-phone account tests injected both
+failures in Kiri:Moto after slicing a cube and checked preservation and recovery.
+Separate tests imported an STL, sliced it, and synchronized the G-code export.
+These checks do not certify geometry, printer settings, or physical output.
+
 Closing asks for confirmation while a workspace snapshot is being saved. A
 write already sent to storage may still complete after the window closes.
 
