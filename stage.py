@@ -30,7 +30,14 @@ def js(data):
     }
 """+s[b:]
  s=s.replace('"/wasm/kiri-sla.wasm"','new URL("../../../wasm/kiri-sla.wasm", import.meta.url).href').replace('"/wasm/kiri-geo.wasm"','new URL("../../../wasm/kiri-geo.wasm", import.meta.url).href').replace('"/lib/gpu/raster-worker.js"','new URL("../../gpu/raster-worker.js", import.meta.url).href');return s.encode()
-for source,destination in [('src/pack/kiri-main.js','lib/main/kiri.js'),('src/pack/mesh-main.js','lib/main/mesh.js'),('src/pack/kiri-work.js','lib/kiri/run/worker.js'),('src/pack/kiri-pool.js','lib/kiri/run/minion.js'),('src/pack/mesh-work.js','lib/mesh/work.js')]:put(source,destination,js)
+def mesh_js(data):
+ s=js(data).decode()
+ # The About dialog is still available through Help; it should not interrupt
+ # every new account's first project. Fail the build if upstream changes here.
+ welcome='    if (api2.prefs.map.info.welcome !== false) {\n      api2.welcome(version2);\n    }'
+ if s.count(welcome)!=1:raise RuntimeError('Mesh startup welcome hook changed; review the upstream build')
+ return s.replace(welcome,'    // Codi desktop: keep About in Help, without opening it on startup.').encode()
+for source,destination in [('src/pack/kiri-main.js','lib/main/kiri.js'),('src/pack/mesh-main.js','lib/main/mesh.js'),('src/pack/kiri-work.js','lib/kiri/run/worker.js'),('src/pack/kiri-pool.js','lib/kiri/run/minion.js'),('src/pack/mesh-work.js','lib/mesh/work.js')]:put(source,destination,mesh_js if destination=='lib/main/mesh.js' else js)
 with (out/'lib/main/mesh.js').open('a') as f:f.write('\nwindow.codiLoadFiles = load_files;\n'+(HERE/'mesh-bridge.js').read_text())
 put('web/obj/cube.stl','obj/cube.stl')
 for name in ['kiri-sla.wasm','kiri-geo.wasm','kiri-ani.wasm','manifold.wasm']:put('src/wasm/'+name,'wasm/'+name)
