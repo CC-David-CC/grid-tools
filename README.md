@@ -87,3 +87,7 @@ associations. Local registered-account desktop and emulated-phone tests checked
 both tools using a saved workspace, injected read failure, cancel/confirm retry,
 synchronization, and preservation of the original file. Physical touch and
 manufacturing behavior remain unverified.
+Phone-sized account tests also saved a separate scratch workspace after the
+injected read failure and verified that the original server file was unchanged
+for both Kiri:Moto and Mesh:Tool. This used the fallback workspace, not a
+physical device or full manufacturing workflow.
