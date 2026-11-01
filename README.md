@@ -73,3 +73,7 @@ saving, including integers outside their array's range and non-finite or
 unrepresentable 32-bit float values. A rejected project leaves the current
 workspace open. This protects against these conversion errors; it does not
 establish that every third-party project field is supported.
+
+If a browser export cannot be read or exceeds the file-size limit, its error is
+shown in the desktop app's status area rather than a browser alert. The export
+is not written; choose another export or retry after correcting the problem.
