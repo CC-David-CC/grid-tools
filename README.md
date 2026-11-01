@@ -54,3 +54,10 @@ correction. This checks the label, not the exported content or suitability for a
 machine. Local desktop and emulated-phone tests cover a real Mesh STL, rejection
 of a `.png` name, a real Kiri slice saved as `.nc`, account synchronization,
 and fresh-session recovery; physical touch and hardware are not verified.
+
+If a restored workspace file is invalid or missing, its stale file association
+is cleared and the current in-browser workspace remains available. Local desktop
+and emulated-phone tests cover both Kiri:Moto and Mesh:Tool with an invalid
+workspace, model import, snapshot save/server sync and refresh; phone-sized
+missing-file tests cover the fallback. Physical touch and machine output remain
+unverified.
