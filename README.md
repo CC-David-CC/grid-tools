@@ -45,3 +45,12 @@ Workspace and export replacement use desktop confirmations. Changing a saved tar
 
 Closing asks for confirmation while a workspace snapshot is being saved. A
 write already sent to storage may still complete after the window closes.
+
+The export filename must retain the format extension supplied by the editor,
+so an STL cannot accidentally be saved as a PNG. Common G-code extensions
+(`.gcode`, `.gco`, `.nc`, `.ngc`, `.gc`, `.g`, and `.tap`) are interchangeable
+for a G-code export. A rejected name leaves the pending export open for
+correction. This checks the label, not the exported content or suitability for a
+machine. Local desktop and emulated-phone tests cover a real Mesh STL, rejection
+of a `.png` name, a real Kiri slice saved as `.nc`, account synchronization,
+and fresh-session recovery; physical touch and hardware are not verified.
