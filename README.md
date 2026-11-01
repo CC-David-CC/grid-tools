@@ -85,8 +85,11 @@ validation of every setting, model format, slicer operation or printer output.
 Mesh:Tool project snapshots reject invalid typed-array values before opening or
 saving, including integers outside their array's range and non-finite or
 unrepresentable 32-bit float values. A rejected project leaves the current
-workspace open. This protects against these conversion errors; it does not
-establish that every third-party project field is supported.
+workspace open. Before replacement, the temporary editor's restored model IDs
+and every mesh vertex are compared with the saved project; a mismatch is
+rejected. This comparison takes time proportional to the vertex count. The
+temporary editor and snapshots already require extra memory for geometry. It
+does not validate all transforms, metadata, model semantics, or physical output.
 
 If a browser export cannot be read or exceeds the file-size limit, its error is
 shown in the desktop app's status area rather than a browser alert. The export

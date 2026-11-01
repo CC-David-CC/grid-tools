@@ -1,5 +1,16 @@
 const FORMAT='codi-mesh-project/1', LIMIT=128*1024*1024;
 const TYPES=Object.freeze({Float32Array,Float64Array,Int8Array,Uint8Array,Uint8ClampedArray,Int16Array,Uint16Array,Int32Array,Uint32Array});
+// Mesh:Tool may accept a snapshot but fail to restore a model faithfully.
+// Compare model IDs and every saved vertex, not just the number of entries.
+export function sameMeshGeometry(expected,actual){
+ const a=expected?.space,b=actual?.space;if(!a||!b||Object.keys(a).length!==Object.keys(b).length)return false;
+ for(const [id,model] of Object.entries(a)){
+  if(!Object.hasOwn(b,id))return false;
+  if(!!model?.mesh!==!!b[id]?.mesh)return false;
+  if(model?.mesh){const vertices=b[id]?.mesh;if(!vertices||vertices.length!==model.mesh.length)return false;for(let i=0;i<vertices.length;i++)if(vertices[i]!==model.mesh[i])return false;}
+ }
+ return true;
+}
 function validTypedValues(type,values){
  const ranges={Int8Array:[-128,127],Uint8Array:[0,255],Uint8ClampedArray:[0,255],Int16Array:[-32768,32767],Uint16Array:[0,65535],Int32Array:[-2147483648,2147483647],Uint32Array:[0,4294967295]};
  return values.every(n=>typeof n==='number'&&Number.isFinite(n)&&(type!=='Float32Array'||(Number.isFinite(Math.fround(n))&&(n===0||Math.fround(n)!==0)))&&(!ranges[type]||(Number.isInteger(n)&&n>=ranges[type][0]&&n<=ranges[type][1])));
