@@ -2,6 +2,12 @@
 
 These two desktop entries share a lazy-loaded, locally packaged Grid.Space
 browser build. Kiri:Moto provides slicing; Mesh:Tool edits and repairs meshes.
+In Kiri:Moto, choose **File → Add 20 mm example cube** to try a first model
+without uploading one. It adds a closed cube alongside any existing models.
+Select a printer profile and slice it, then save the workspace or export the
+toolpath to My files. The STL geometry assumes millimetres; an STL does not
+contain a unit label. Verify the profile and toolpath independently before
+using a real printer. The example does not connect to or validate hardware.
 Use Open from My files to load an account-mirrored model. Upload a model from your computer in Files first. Upstream export actions open a save panel where you can choose a My files folder and name; replacements require confirmation and use version checks. A pending export prompts before its window closes. `.stl`, `.obj`, and `.3mf`
 files opened in Files launch Mesh:Tool. Kiri:Moto can save a `.kiri` workspace snapshot, including its models and slicing settings, to My files. That snapshot is synchronized with the account drive. Use Open workspace to restore it; the current workspace will be replaced after confirmation. Changes made after a snapshot require another save. Mesh:Tool can also save a `.meshproj` workspace snapshot to My files, including mesh geometry, groups, sketches and document metadata. Select Open workspace to restore a snapshot; save again after subsequent edits. Snapshots preserve the current document, not its undo history. Other working state remains in browser storage; export fabrication files separately. The apps do not
 connect directly to a printer. WebGL is required.
@@ -91,3 +97,9 @@ Phone-sized account tests also saved a separate scratch workspace after the
 injected read failure and verified that the original server file was unchanged
 for both Kiri:Moto and Mesh:Tool. This used the fallback workspace, not a
 physical device or full manufacturing workflow.
+
+The example was checked as a closed 20 mm cube, and local registered-account
+Chrome tests on desktop and an emulated phone added two copies, sliced them,
+saved and synchronized a workspace, and reopened it. CAM inch scaling was
+checked numerically, not through a real CAM workflow. Physical touch and
+fabrication remain unverified.
