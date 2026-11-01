@@ -37,7 +37,11 @@ def mesh_js(data):
  welcome='    if (api2.prefs.map.info.welcome !== false) {\n      api2.welcome(version2);\n    }'
  if s.count(welcome)!=1:raise RuntimeError('Mesh startup welcome hook changed; review the upstream build')
  return s.replace(welcome,'    // Codi desktop: keep About in Help, without opening it on startup.').encode()
-for source,destination in [('src/pack/kiri-main.js','lib/main/kiri.js'),('src/pack/mesh-main.js','lib/main/mesh.js'),('src/pack/kiri-work.js','lib/kiri/run/worker.js'),('src/pack/kiri-pool.js','lib/kiri/run/minion.js'),('src/pack/mesh-work.js','lib/mesh/work.js')]:put(source,destination,mesh_js if destination=='lib/main/mesh.js' else js)
+def kiri_js(data):
+ s=js(data).decode();start=s.index('function checkSeed(then) {');end=s.index('\nfunction onBooleanClick5',start);section=s[start:end]
+ if section.count('api2.help.show();')!=2:raise RuntimeError('Kiri startup help hooks changed; review the upstream build')
+ return (s[:start]+section.replace('api2.help.show();','/* Codi desktop: Help remains available from the menu. */')+s[end:]).encode()
+for source,destination in [('src/pack/kiri-main.js','lib/main/kiri.js'),('src/pack/mesh-main.js','lib/main/mesh.js'),('src/pack/kiri-work.js','lib/kiri/run/worker.js'),('src/pack/kiri-pool.js','lib/kiri/run/minion.js'),('src/pack/mesh-work.js','lib/mesh/work.js')]:put(source,destination,mesh_js if destination=='lib/main/mesh.js' else kiri_js if destination=='lib/main/kiri.js' else js)
 with (out/'lib/main/mesh.js').open('a') as f:f.write('\nwindow.codiLoadFiles = load_files;\n'+(HERE/'mesh-bridge.js').read_text())
 put('web/obj/cube.stl','obj/cube.stl')
 for name in ['kiri-sla.wasm','kiri-geo.wasm','kiri-ani.wasm','manifold.wasm']:put('src/wasm/'+name,'wasm/'+name)

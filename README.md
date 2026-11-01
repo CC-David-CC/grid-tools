@@ -26,12 +26,16 @@ it is not a security boundary against other trusted same-origin application code
 
 The embedded controls are upstream desktop-oriented interfaces; a phone-sized automated workflow does not establish that every control is touch-friendly. Kiri workspace snapshots are explicit saves, not continuous synchronization. Mesh:Tool snapshots are also explicit saves; export fabrication results to My files separately. Printer profiles, resulting G-code, mesh repair and fabrication safety require independent verification.
 
-The local build candidate suppresses Mesh:Tool's first-run About dialog; Help →
-About remains available. The stage script checks the exact upstream startup
-hook and fails if it changes. This candidate has not yet been deployed, and
-the separate desktop file toolbar still needs integration into both editors'
-own File menus. The packaged candidate was tested at desktop, emulated-phone
-and 4K viewport sizes; these checks do not establish physical-touch behavior.
+The local candidate puts model and workspace actions in each editor's File
+menu, with the original desktop controls as a fallback if the menu cannot be
+found. First save and Save workspace as ask for a My files path. Upstream
+file-input activation is redirected to the My files picker. Mesh:Tool's About
+and Kiri:Moto's Help no longer open automatically at first start, but remain
+available from their menus. The stage script checks the upstream startup hooks
+and fails if they change. Desktop, emulated-phone and 4K account checks cover
+menu actions, model import, workspace save, sync and reopen; a clean rebuilt
+bundle passed the phone-sized workflow. These checks do not establish physical
+touch behavior, and this candidate has not yet been deployed.
 
 Export saves capture the chosen destination when Save export is pressed, even if the filename changes while storage responds. Existing-file checks use metadata rather than rereading the full model; an immediate conflict is reported for resolution in Files. Workspace snapshot writes also report immediate conflicts.
 
