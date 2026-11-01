@@ -77,3 +77,13 @@ establish that every third-party project field is supported.
 If a browser export cannot be read or exceeds the file-size limit, its error is
 shown in the desktop app's status area rather than a browser alert. The export
 is not written; choose another export or retry after correcting the problem.
+
+If opening a restored file fails because storage is temporarily unavailable or
+the file conflicts, the original association is retained and **Retry saved
+file** is offered. Workspace imports ask before replacing the current workspace;
+cancel keeps the current work. A scratch snapshot defaults to a separate path if
+the original used the default name. Missing or invalid files still clear stale
+associations. Local registered-account desktop and emulated-phone tests checked
+both tools using a saved workspace, injected read failure, cancel/confirm retry,
+synchronization, and preservation of the original file. Physical touch and
+manufacturing behavior remain unverified.
