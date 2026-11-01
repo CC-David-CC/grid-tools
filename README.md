@@ -103,3 +103,13 @@ Chrome tests on desktop and an emulated phone added two copies, sliced them,
 saved and synchronized a workspace, and reopened it. CAM inch scaling was
 checked numerically, not through a real CAM workflow. Physical touch and
 fabrication remain unverified.
+
+Exports suggest the folder of the most recently saved or opened workspace,
+using the filename supplied by the editor; the path remains editable before
+saving. Without an associated workspace, exports start in My files root.
+The suggestion does not change the export contents. Real Kiri:Moto desktop
+and emulated-phone account tests cover adding the example cube, slicing,
+saving a workspace in a folder, exporting beside it, syncing and reading the
+export in a fresh browser session. Mesh:Tool shares the suggestion logic but
+was not independently exercised in that test; physical touch and machine
+output remain unverified.
