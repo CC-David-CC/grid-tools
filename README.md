@@ -124,3 +124,13 @@ saving a workspace in a folder, exporting beside it, syncing and reading the
 export in a fresh browser session. Mesh:Tool shares the suggestion logic but
 was not independently exercised in that test; physical touch and machine
 output remain unverified.
+
+In Mesh:Tool, **File → Add 20-unit example cube** adds a local, closed cube
+without replacing existing models. STL has no unit label; interpret its
+20 × 20 × 20 dimensions in the units your receiving tool expects and verify
+before fabrication. Save a workspace to keep editable geometry; export STL
+separately. Local registered-account desktop and emulated-phone tests imported
+an existing STL, checked the example's bounds, ran a union, saved and synced
+the workspace and STL, and reopened both in a fresh session. Changes after a
+snapshot are not comprehensively tracked for an unsaved-close warning; save
+explicitly before closing. Physical touch and fabrication remain unverified.
