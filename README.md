@@ -134,3 +134,24 @@ an existing STL, checked the example's bounds, ran a union, saved and synced
 the workspace and STL, and reopened both in a fresh session. Changes after a
 snapshot are not comprehensively tracked for an unsaved-close warning; save
 explicitly before closing. Physical touch and fabrication remain unverified.
+
+The desktop now tracks Mesh:Tool document-store mutations and Kiri:Moto widget
+and selected settings events. A tracked change after a workspace snapshot asks
+before closing. Snapshot writes and workspace restores also ask before closing;
+changes arriving during a snapshot remain unsaved and the status says so. Kiri
+restore waits for deferred add events for every expected widget ID before
+reporting completion, with a bounded timeout and an attempted rollback on
+failure. If change tracking cannot be installed, closing remains guarded even
+after saving. Local registered-
+account desktop and emulated-phone tests exercised a real Mesh union, a Kiri
+slice-height change, held snapshot writes and restores, close cancellation,
+server sync and fresh reopening. The Kiri loader can finish background work
+after a model first appears, so an immediate snapshot may conservatively report
+newer changes; save again after loading settles. These hooks do not cover every
+upstream operation or programmatic mutation, and conservative extra warnings
+remain possible. Save explicitly before closing. Physical touch, all settings,
+actual hardware and other restore failure modes remain unverified. A separate
+desktop and emulated-phone test split one real three-model completion batch
+into three delayed events, then withheld an event to exercise timeout and
+rollback while preserving the original file. Tracking-install failure was
+injected for both apps and kept the close warning active after a save.
