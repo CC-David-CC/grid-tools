@@ -57,12 +57,54 @@ export function mount(host){
   const hidden=[];function hide(node){if(node){hidden.push([node,node.style.display]);node.style.display='none';}}
   if(mode==='kiri')hide(oldImport);else{for(const node of content.children){if(node.tagName==='DIV'&&['Open','Import'].includes(node.firstElementChild?.textContent.trim()))hide(node);}}
   const style=doc.createElement('style');style.textContent=`.codi-grid-action{display:block;width:100%;min-height:44px;padding:8px;text-align:left;background:transparent;color:inherit;border:1px solid transparent;border-radius:5px;font:inherit;cursor:pointer}.codi-grid-action:hover,.codi-grid-action:focus{border-color:var(--accent,var(--appname-blue));outline:2px solid transparent} .codi-grid-open .menu-items,.codi-grid-open .top-menu-drop{display:flex!important}.menu-items::before{pointer-events:none}`;doc.head.append(style);
+  style.textContent += `
+    @media (max-width: 600px) {
+      #mode-tools { position: relative; z-index: 20; }
+      .codi-grid-file .top-menu-drop { max-height: calc(100dvh - 80px); overflow-y: auto; }
+      #app-body:not(.codi-grid-panels-open) #grouplist,
+      #app-body:not(.codi-grid-panels-open) #logger { display: none !important; }
+      #app-body #logger { min-width: 0; max-width: calc(100vw - 52px); bottom: 48px; }
+      #app-body #codi-grid-panels {
+        display: block;
+        position: absolute;
+        right: 8px;
+        bottom: 6px;
+        z-index: 9;
+        padding: 8px 10px;
+        min-height: 40px;
+        background: var(--menu-back);
+        color: #eee;
+        border: 1px solid var(--border);
+        border-radius: 5px;
+      }
+    }
+    #codi-grid-panels { display: none; }
+    .codi-grid-file:not(.codi-grid-open) .menu-items { display: none; }
+    @media (hover: hover) {
+      .codi-grid-file:not(.codi-grid-open):hover .menu-items { display: flex; }
+    }
+  `;
+  menu.classList.add('codi-grid-file');
+  const meshBody = mode === 'mesh' ? doc.getElementById('app-body') : null;
+  const panels = meshBody && doc.createElement('button');
+  if (panels) {
+    panels.id = 'codi-grid-panels';
+    panels.type = 'button';
+    panels.textContent = 'Objects and log';
+    panels.setAttribute('aria-controls', 'grouplist logger');
+    panels.setAttribute('aria-expanded', 'false');
+    panels.addEventListener('click', () => {
+      const expanded = meshBody.classList.toggle('codi-grid-panels-open');
+      panels.setAttribute('aria-expanded', String(expanded));
+    });
+    meshBody.append(panels);
+  }
   const actions=[[mode==='kiri'?'Add 20 mm example cube':'Add 20-unit example cube',addExample],['Open model from My files',browse],['Open workspace from My files',()=>openWorkspace()],['Save workspace',()=>state.workspacePath?saveWorkspace():saveWorkspaceAs()],['Save workspace as…',saveWorkspaceAs]];
   const nodes=[];for(const [label,action] of actions){const button=doc.createElement('button');button.type='button';button.className='codi-grid-action';button.textContent=label;button.addEventListener('click',()=>{menu.classList.remove('codi-grid-open');void action();});content.insertBefore(button,input.closest(mode==='kiri'?'#file-import':'input')||content.firstChild);nodes.push(button);}
   const trigger=menu.firstElementChild,oldTab=trigger.getAttribute('tabindex'),oldRole=trigger.getAttribute('role');trigger.tabIndex=0;trigger.setAttribute('role','button');trigger.setAttribute('aria-haspopup','menu');
   const toggle=e=>{if(e.target===menu||e.target===trigger){e.preventDefault();menu.classList.toggle('codi-grid-open');}},dismiss=e=>{if(!menu.contains(e.target))menu.classList.remove('codi-grid-open');},keys=e=>{if(e.key==='Escape')menu.classList.remove('codi-grid-open');else if(e.target===trigger&&(e.key==='Enter'||e.key===' ')){e.preventDefault();menu.classList.toggle('codi-grid-open');}},intercept=e=>{if(e.target===input){e.preventDefault();e.stopImmediatePropagation();menu.classList.remove('codi-grid-open');void browse();}};
   menu.addEventListener('click',toggle);doc.addEventListener('pointerdown',dismiss);doc.addEventListener('keydown',keys);doc.addEventListener('click',intercept,true);bar.hidden=true;pathDetails.hidden=true;workspaceDetails.hidden=true;
-  removeMenu=()=>{menu.removeEventListener('click',toggle);doc.removeEventListener('pointerdown',dismiss);doc.removeEventListener('keydown',keys);doc.removeEventListener('click',intercept,true);nodes.forEach(n=>n.remove());style.remove();oldTab===null?trigger.removeAttribute('tabindex'):trigger.setAttribute('tabindex',oldTab);oldRole===null?trigger.removeAttribute('role'):trigger.setAttribute('role',oldRole);trigger.removeAttribute('aria-haspopup');for(const [node,display] of hidden)node.style.display=display;};return true;
+  removeMenu=()=>{panels?.remove();meshBody?.classList.remove('codi-grid-panels-open');menu.classList.remove('codi-grid-file');menu.removeEventListener('click',toggle);doc.removeEventListener('pointerdown',dismiss);doc.removeEventListener('keydown',keys);doc.removeEventListener('click',intercept,true);nodes.forEach(n=>n.remove());style.remove();oldTab===null?trigger.removeAttribute('tabindex'):trigger.setAttribute('tabindex',oldTab);oldRole===null?trigger.removeAttribute('role'):trigger.setAttribute('role',oldRole);trigger.removeAttribute('aria-haspopup');for(const [node,display] of hidden)node.style.display=display;};return true;
  }
  frame.addEventListener('load',()=>{tell('Starting '+frame.title+'…');const started=Date.now();function ready(){if(!valid())return;const doc=frame.contentDocument,curtain=doc?.getElementById('curtain');if(curtain&&getComputedStyle(curtain).display==='none'){const installed=installFileMenu();const tracking=installWorkspaceTracking();tell(mode==='kiri'?`To try slicing, ${installed?'choose File → ':''}Add 20 mm example cube. Save workspace to My files to keep your work.`:'Save workspace to My files for a recoverable snapshot. Later changes require another save.');if(!tracking)tell('Automatic workspace change tracking is unavailable. Save explicitly before closing.');if(['mirror','temporary'].includes(w.launchContext?.storage)&&w.launchContext.owner===owner)open(w.launchContext.path,{initialLoad:true});return;}if(Date.now()-started<45000)readyTimer=setTimeout(ready,250);else tell('Still starting. Check this device supports WebGL.');}ready();});
  body.append(bar,pathDetails,workspaceDetails,notice,uncertainNotice,retry,exportPanel,frame,status);
