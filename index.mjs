@@ -78,6 +78,9 @@ export function mount(host){
         border-radius: 5px;
       }
     }
+    @media (hover: none) {
+      #menubar .top-menu > .codi-grid-file:not(.codi-grid-open) .top-menu-drop { display: none; }
+    }
     #codi-grid-panels { display: none; }
     .codi-grid-file:not(.codi-grid-open) .menu-items { display: none; }
     @media (hover: hover) {
