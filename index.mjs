@@ -2,9 +2,17 @@ import './style.css';
 import {encodeWorkspace,decodeWorkspace} from './kiri-workspace.mjs';
 import {encodeMeshProject,decodeMeshProject,sameMeshGeometry} from './mesh-project.mjs';
 import {exampleCube} from './example-cube.mjs';
+function withFilenameExtension(path, extension) {
+ const trimmed=path.trim();
+ const basename=trimmed.split('/').at(-1);
+ return extension&&basename&&!basename.includes('.')?trimmed+'.'+extension:trimmed;
+}
+
 export function mount(host){
  const {w,desktop}=host,{make,textButton,appInput}=host.ui,{workspaceMirrorContext,workspaceOwner}=host.storage,owner=workspaceOwner();
  const guest=host.session()?.public.kind==='anonymous';
+ const workspaceExtension=()=>mode==='kiri'?'kiri':'meshproj';
+ const enableTouchTyping=()=>{if(matchMedia('(pointer: coarse)').matches)host.ui.enableKeyboard?.();};
  const scope=guest?'guest:'+crypto.randomUUID():owner;
  const body=make('div','window-content grid-tools'),bar=make('div','grid-toolbar'),path=appInput('Model file path',w.launchContext?.path||'/'),frame=document.createElement('iframe'),status=make('div','app-status'),mode=w.app==='mesh-tool'?'mesh':'kiri';
  const exportPanel=make('div','grid-export'),exportPath=appInput('Export file path','/model.stl'),exportInfo=make('span','grid-export-info'),exportBar=make('div','grid-toolbar');
@@ -44,15 +52,16 @@ export function mount(host){
  async function workspaceFolder(){if(busy||!valid())return;try{const dir=await host.storage.pickFolder({signal:host.signal});if(dir===null||!valid())return;const c=await workspaceMirrorContext();if(!valid()||!c.valid())return;workspacePath.value=c.path((dir==='/'?'':dir)+'/'+c.name(workspacePath.value.split('/').pop()));}catch(e){tell('Could not choose folder: '+e.message);}}
  function clearExport(){pending=null;pendingName=null;syncDirty();exportPanel.hidden=true;}
  function validateExportName(target){const suffix=name=>name.split(/[\\/]/).pop().match(/\.([a-z0-9]{1,12})$/i)?.[1].toLowerCase(),expected=suffix(pendingName||''),actual=suffix(target),gcode=new Set(['gcode','gco','nc','ngc','gc','g','tap']);if(expected&&actual!==expected&&!(gcode.has(expected)&&gcode.has(actual)))throw Error('The filename must use .'+expected+(gcode.has(expected)?' or another G-code extension':'')+' to match this export.');}
- async function saveExport(){if(busy||!pending||!valid())return;if(workspaceUncertain){tell('The workspace is uncertain. Reopen a saved workspace before saving an export.');return;}busy=true;const current=pending,target=exportPath.value;try{const c=await workspaceMirrorContext(),p=c.path(target);validateExportName(p);let version=null;try{const old=await c.files.stat(p);if(old.status==='conflict')throw Error('Resolve the existing file conflict in Files first.');if(!await confirmReplace('Replace '+p+'?','Replace export')){tell('Export save cancelled.');return;}version=old.version;}catch(err){if(err.message!=='File not found.')throw err;}if(!valid()||!c.valid()||current!==pending)return;const saved=await c.files.write(p,new Uint8Array(current),version);if(!valid()||!c.valid()||current!==pending)return;clearExport();tell(saved.status==='conflict'?'Export saved on this device, but the server has a conflicting copy. Resolve it in Files: '+p:(c.storage==='temporary'?'Saved in this browser tab: ':'Saved on this device; syncing with server: ')+p);}catch(err){tell('Could not save export: '+err.message);}finally{releaseBusy();}}
+ async function saveExport(){if(busy||!pending||!valid())return;if(workspaceUncertain){tell('The workspace is uncertain. Reopen a saved workspace before saving an export.');return;}busy=true;const current=pending,target=exportPath.value;try{const c=await workspaceMirrorContext(),p=c.path(withFilenameExtension(target,pendingName?.match(/\.([a-z0-9]{1,12})$/i)?.[1]));validateExportName(p);let version=null;try{const old=await c.files.stat(p);if(old.status==='conflict')throw Error('Resolve the existing file conflict in Files first.');if(!await confirmReplace('Replace '+p+'?','Replace export')){tell('Export save cancelled.');return;}version=old.version;}catch(err){if(err.message!=='File not found.')throw err;}if(!valid()||!c.valid()||current!==pending)return;const saved=await c.files.write(p,new Uint8Array(current),version);if(!valid()||!c.valid()||current!==pending)return;clearExport();tell(saved.status==='conflict'?'Export saved on this device, but the server has a conflicting copy. Resolve it in Files: '+p:(c.storage==='temporary'?'Saved in this browser tab: ':'Saved on this device; syncing with server: ')+p);}catch(err){tell('Could not save export: '+err.message);}finally{releaseBusy();}}
  async function chooseFolder(){if(!pending||busy||!valid())return;try{const dir=await host.storage.pickFolder({signal:host.signal});if(dir===null||!valid()||!pending)return;const c=await workspaceMirrorContext();if(!valid()||!c.valid()||!pending)return;exportPath.value=c.path((dir==='/'?'':dir)+'/'+c.name(exportPath.value.split('/').pop()));}catch(e){tell('Could not choose folder: '+e.message);}}
  const receive=e=>{if(e.source!==frame.contentWindow||e.origin!==location.origin||!valid())return;if(e.data?.type==='codi-grid-export-error'){const message={unavailable:'This export cannot be saved to My files.', 'too-large':'Files are limited to 128 MiB.', 'read-failed':'Could not read the export. Try again.'}[e.data.code];if(message)tell(message);return;}if(e.data?.type!=='codi-grid-export'||!(e.data.bytes instanceof ArrayBuffer)||e.data.bytes.byteLength>128*1024*1024)return;if(pending){tell('Save or cancel the pending export before exporting another file.');return;}pending=e.data.bytes;pendingName=String(e.data.name||'model').split(/[\\/]/).pop();state.dirty=true;const folder=state.workspacePath?.slice(0,state.workspacePath.lastIndexOf('/'))||'';exportPath.value=folder+'/'+pendingName;exportInfo.textContent='Choose where to save the exported file in My files.';exportPanel.hidden=false;tell('Export ready to save.');};
  window.addEventListener('message',receive);
  const pathDetails=document.createElement('details'),summary=make('summary','','Model path'),pathBar=make('div','grid-toolbar');pathBar.append(path,textButton('Open path',()=>open()));pathDetails.append(summary,pathBar);
  const workspacePath=appInput('Workspace file path',mode==='kiri'?'/Workspace.kiri':'/Workspace.meshproj'),workspaceDetails=document.createElement('details'),workspaceSummary=make('summary','','Workspace save location'),workspaceBar=make('div','grid-toolbar');workspaceBar.append(workspacePath,textButton('Choose workspace folder',workspaceFolder));workspaceDetails.append(workspaceSummary,workspaceBar);
  bar.append(textButton(mode==='kiri'?'Add 20 mm example cube':'Add 20-unit example cube',addExample));bar.append(textButton('Open from My files',browse),textButton('Open workspace',()=>openWorkspace()),textButton('Save workspace',saveWorkspace),textButton('Files',()=>desktop.launch('files')));
+ exportPath.addEventListener('pointerdown',enableTouchTyping);
  exportBar.append(exportPath,textButton('Choose folder',chooseFolder),textButton('Save export',saveExport),textButton('Cancel export',()=>{if(!busy){clearExport();tell('Export cancelled.');}}));exportPanel.append(exportInfo,exportBar);exportPanel.hidden=true;
- async function saveWorkspaceAs(){if(busy||choosing||!valid())return;choosing=true;let chosen;try{chosen=await host.ui.prompt('Choose a workspace file path in My files:',{title:'Save workspace as',value:state.workspacePath||workspacePath.value,confirmLabel:'Save',signal:host.signal});}finally{choosing=false}if(chosen===null||!valid())return;workspacePath.value=chosen;await saveWorkspace();}
+ async function saveWorkspaceAs(){if(busy||choosing||!valid())return;choosing=true;let chosen;try{enableTouchTyping();chosen=await host.ui.prompt('Choose a workspace file path in My files:',{title:'Save workspace as',value:state.workspacePath||workspacePath.value,confirmLabel:'Save',signal:host.signal});}finally{choosing=false}if(chosen===null||!valid())return;workspacePath.value=withFilenameExtension(chosen,workspaceExtension());await saveWorkspace();}
  function installFileMenu(){
   const doc=frame.contentDocument,input=doc?.getElementById(mode==='kiri'?'load-file':'import'),content=mode==='kiri'?input?.closest('.content'):input?.closest('.menu-items'),menu=mode==='kiri'?content?.closest('.top-menu > span'):content?.closest('.menu');if(!input||!content||!menu)return false;
   const oldImport=mode==='kiri'?doc.getElementById('file-import'):input.nextElementSibling?.nextElementSibling?.nextElementSibling;
@@ -62,7 +71,26 @@ export function mount(host){
   style.textContent += `
     @media (max-width: 600px) {
       #mode-tools { position: relative; z-index: 20; }
-      .codi-grid-file .top-menu-drop { max-height: calc(100dvh - 80px); overflow-y: auto; }
+      #menubar, #menubar .top-menu { flex-wrap: wrap; }
+      #menubar .top-menu { min-width: 0; }
+      #menubar .top-menu > span {
+        position: static;
+        box-sizing: border-box;
+        justify-content: center;
+        min-height: 44px;
+        min-width: 44px;
+        padding: 4px 6px;
+      }
+      #menubar .top-menu-drop {
+        position: absolute;
+        top: 100%;
+        inset-inline: 4px;
+        max-height: calc(100dvh - 110px);
+        overflow: auto;
+        overscroll-behavior: contain;
+        white-space: normal;
+      }
+      #menubar .top-menu-drop > .content { flex: 1; min-width: 0; }
       #app-body:not(.codi-grid-panels-open) #grouplist,
       #app-body:not(.codi-grid-panels-open) #logger { display: none !important; }
       #app-body #logger { min-width: 0; max-width: calc(100vw - 52px); bottom: 48px; }
