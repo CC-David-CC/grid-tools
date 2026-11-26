@@ -137,6 +137,40 @@ export function mount(host){
       .codi-grid-file:not(.codi-grid-open):hover .menu-items { display: flex; }
     }
   `;
+  if (mode === 'mesh') style.textContent += `
+    @media (max-width: 720px), (max-height: 350px) {
+      #top-left { flex-wrap: wrap; flex: 1; min-width: 0; margin: 0; }
+      #top-left > .title, #top-left > .menubar-separator, #top-mid, #top-right { display: none; }
+      #top-left, #top-left > .menu { position: static; }
+      #top-left > .menu {
+        box-sizing: border-box;
+        margin: 0;
+        min-height: 44px;
+        min-width: 44px;
+        padding: 4px 8px;
+        justify-content: center;
+      }
+      #top-left > .menu > [role=button] { align-self: stretch; align-items: center; }
+      #top-left > .menu .menu-items {
+        top: 100%;
+        inset-inline: 4px;
+        overflow-x: hidden;
+        overflow-y: auto;
+        max-height: max(72px, calc(100dvh - 96px));
+        overscroll-behavior: contain;
+        white-space: normal;
+        background: #30343a;
+      }
+      #top-left > .menu .menu-items > div { box-sizing: border-box; min-height: 44px; }
+      #top-left > .menu:not(.codi-grid-open):hover .menu-items { display: none; }
+    }
+    #top-left:has(> .codi-grid-open) > .menu:not(.codi-grid-open):hover .menu-items {
+      display: none;
+    }
+    @media (hover: none) {
+      #top-left > .menu:not(.codi-grid-open):hover .menu-items { display: none; }
+    }
+  `;
   menu.classList.add('codi-grid-file');
   const meshBody = mode === 'mesh' ? doc.getElementById('app-body') : null;
   const panels = meshBody && doc.createElement('button');
@@ -153,16 +187,82 @@ export function mount(host){
     meshBody.append(panels);
   }
   const actions=[[mode==='kiri'?'Add 20 mm example cube':'Add 20-unit example cube',addExample],['Open model from My files',browse],['Open workspace from My files',()=>openWorkspace()],['Save workspace',()=>state.workspacePath?saveWorkspace():saveWorkspaceAs()],['Save workspace as…',saveWorkspaceAs]];
-  const trigger=menu.firstElementChild,oldTab=trigger.getAttribute('tabindex'),oldRole=trigger.getAttribute('role');
-  const setMenuOpen=open=>{menu.classList.toggle('codi-grid-open',open);trigger.setAttribute('aria-expanded',String(open));};
-  trigger.tabIndex=0;trigger.setAttribute('role','button');trigger.setAttribute('aria-haspopup','menu');setMenuOpen(false);
-  const nodes=[];for(const [label,action] of actions){const button=doc.createElement('button');button.type='button';button.className='codi-grid-action';button.textContent=label;button.addEventListener('click',()=>{setMenuOpen(false);void action();});content.insertBefore(button,input.closest(mode==='kiri'?'#file-import':'input')||content.firstChild);nodes.push(button);}
-  const toggle=e=>{if(e.target===menu||trigger.contains(e.target)){e.preventDefault();setMenuOpen(!menu.classList.contains('codi-grid-open'));}};
-  const dismiss=e=>{if(!menu.contains(e.target))setMenuOpen(false);};
-  const keys=e=>{if(e.key==='Escape')setMenuOpen(false);else if(e.target===trigger&&(e.key==='Enter'||e.key===' ')){e.preventDefault();setMenuOpen(!menu.classList.contains('codi-grid-open'));}};
-  const intercept=e=>{if(e.target===input){e.preventDefault();e.stopImmediatePropagation();setMenuOpen(false);void browse();}};
-  menu.addEventListener('click',toggle);doc.addEventListener('pointerdown',dismiss);doc.addEventListener('keydown',keys);doc.addEventListener('click',intercept,true);bar.hidden=true;pathDetails.hidden=true;workspaceDetails.hidden=true;
-  removeMenu=()=>{panels?.remove();meshBody?.classList.remove('codi-grid-panels-open');menu.classList.remove('codi-grid-file');menu.removeEventListener('click',toggle);doc.removeEventListener('pointerdown',dismiss);doc.removeEventListener('keydown',keys);doc.removeEventListener('click',intercept,true);nodes.forEach(n=>n.remove());style.remove();oldTab===null?trigger.removeAttribute('tabindex'):trigger.setAttribute('tabindex',oldTab);oldRole===null?trigger.removeAttribute('role'):trigger.setAttribute('role',oldRole);trigger.removeAttribute('aria-haspopup');trigger.removeAttribute('aria-expanded');for(const [node,display] of hidden)node.style.display=display;};return true;
+  const menus = mode === 'mesh' ? [...doc.querySelectorAll('#top-left > .menu')] : [menu];
+  const triggers = new Map(menus.map(item => [item, item.firstElementChild]));
+  const previousAttributes = new Map();
+  let openMenu = null;
+  function setOpenMenu(next) {
+    if (openMenu) {
+      openMenu.classList.remove('codi-grid-open');
+      triggers.get(openMenu).setAttribute('aria-expanded', 'false');
+    }
+    openMenu = next;
+    if (next) {
+      next.classList.add('codi-grid-open');
+      triggers.get(next).setAttribute('aria-expanded', 'true');
+    }
+  }
+  function toggle(event) {
+    const item = event.currentTarget;
+    const trigger = triggers.get(item);
+    if (event.target === item || trigger.contains(event.target)) {
+      event.preventDefault();
+      setOpenMenu(openMenu === item ? null : item);
+    } else if (openMenu === item && mode === 'mesh') setOpenMenu(null);
+  }
+  function dismiss(event) {
+    if (openMenu && !openMenu.contains(event.target)) setOpenMenu(null);
+  }
+  function keys(event) {
+    if (event.key === 'Escape') setOpenMenu(null);
+    else if (event.key === 'Enter' || event.key === ' ') {
+      for (const [item, trigger] of triggers) {
+        if (event.target !== trigger) continue;
+        event.preventDefault();
+        setOpenMenu(openMenu === item ? null : item);
+        break;
+      }
+    }
+  }
+  for (const [item, trigger] of triggers) {
+    previousAttributes.set(trigger, ['tabindex', 'role', 'aria-haspopup', 'aria-expanded'].map(name => [name, trigger.getAttribute(name)]));
+    trigger.tabIndex = 0;
+    trigger.setAttribute('role', 'button');
+    trigger.setAttribute('aria-haspopup', 'menu');
+    trigger.setAttribute('aria-expanded', 'false');
+    item.addEventListener('click', toggle);
+  }
+  const nodes = [];
+  for (const [label, action] of actions) {
+    const button = doc.createElement('button');
+    button.type = 'button';
+    button.className = 'codi-grid-action';
+    button.textContent = label;
+    button.addEventListener('click', () => { setOpenMenu(null); void action(); });
+    content.insertBefore(button, input.closest(mode === 'kiri' ? '#file-import' : 'input') || content.firstChild);
+    nodes.push(button);
+  }
+  const intercept=e=>{if(e.target===input){e.preventDefault();e.stopImmediatePropagation();setOpenMenu(null);void browse();}};
+  doc.addEventListener('pointerdown',dismiss);doc.addEventListener('keydown',keys);doc.addEventListener('click',intercept,true);bar.hidden=true;pathDetails.hidden=true;workspaceDetails.hidden=true;
+  removeMenu = () => {
+    setOpenMenu(null);
+    panels?.remove();
+    meshBody?.classList.remove('codi-grid-panels-open');
+    menu.classList.remove('codi-grid-file');
+    for (const [item, trigger] of triggers) {
+      item.removeEventListener('click', toggle);
+      for (const [name, value] of previousAttributes.get(trigger)) {
+        if (value === null) trigger.removeAttribute(name);
+        else trigger.setAttribute(name, value);
+      }
+    }
+    doc.removeEventListener('pointerdown', dismiss);
+    doc.removeEventListener('keydown', keys);
+    doc.removeEventListener('click', intercept, true);
+    nodes.forEach(node => node.remove());
+    style.remove();
+    for (const [node, display] of hidden) node.style.display = display;
+  };
  }
  frame.addEventListener('load',()=>{tell('Starting '+frame.title+'…');const started=Date.now();function ready(){if(!valid())return;const doc=frame.contentDocument,curtain=doc?.getElementById('curtain');if(curtain&&getComputedStyle(curtain).display==='none'){const installed=installFileMenu();const tracking=installWorkspaceTracking();tell(mode==='kiri'?`To try slicing, ${installed?'choose File → ':''}Add 20 mm example cube. Save workspace to My files to keep your work.`:'Save workspace to My files for a recoverable snapshot. Later changes require another save.');if(!tracking)tell('Automatic workspace change tracking is unavailable. Save explicitly before closing.');if(['mirror','temporary'].includes(w.launchContext?.storage)&&w.launchContext.owner===owner)open(w.launchContext.path,{initialLoad:true});return;}if(Date.now()-started<45000)readyTimer=setTimeout(ready,250);else tell('Still starting. Check this device supports WebGL.');}ready();});
  body.append(bar,pathDetails,workspaceDetails,notice,uncertainNotice,retry,exportPanel,frame,status);
