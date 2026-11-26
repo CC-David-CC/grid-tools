@@ -75,7 +75,7 @@ export function mount(host){
       min-width: 14rem;
     }
 
-    @media (max-width: 600px) {
+    @media (max-width: 600px), (max-height: 350px) {
       #mode-tools { position: relative; z-index: 20; }
       #menubar, #menubar .top-menu { flex-wrap: wrap; }
       #menubar .menubar-appname, #menubar .menubar-separator { display: none; }
