@@ -69,9 +69,16 @@ export function mount(host){
   if(mode==='kiri')hide(oldImport);else{for(const node of content.children){if(node.tagName==='DIV'&&['Open','Import'].includes(node.firstElementChild?.textContent.trim()))hide(node);}}
   const style=doc.createElement('style');style.textContent=`.codi-grid-action{display:block;width:100%;min-height:44px;padding:8px;text-align:left;background:transparent;color:inherit;border:1px solid transparent;border-radius:5px;font:inherit;cursor:pointer}.codi-grid-action:hover,.codi-grid-action:focus{border-color:var(--accent,var(--appname-blue));outline:2px solid transparent} .codi-grid-open .menu-items,.codi-grid-open .top-menu-drop{display:flex!important}.menu-items::before{pointer-events:none}`;doc.head.append(style);
   style.textContent += `
+    #menubar .codi-grid-file .top-menu-drop {
+      right: auto;
+      width: max-content;
+      min-width: 14rem;
+    }
+
     @media (max-width: 600px) {
       #mode-tools { position: relative; z-index: 20; }
       #menubar, #menubar .top-menu { flex-wrap: wrap; }
+      #menubar .menubar-appname, #menubar .menubar-separator { display: none; }
       #menubar .top-menu { min-width: 0; }
       #menubar .top-menu > span {
         position: static;
@@ -89,6 +96,11 @@ export function mount(host){
         overflow: auto;
         overscroll-behavior: contain;
         white-space: normal;
+      }
+      #menubar .codi-grid-file .top-menu-drop {
+        right: 4px;
+        width: auto;
+        min-width: 0;
       }
       #menubar .top-menu-drop > .content { flex: 1; min-width: 0; }
       #app-body:not(.codi-grid-panels-open) #grouplist,
@@ -133,11 +145,16 @@ export function mount(host){
     meshBody.append(panels);
   }
   const actions=[[mode==='kiri'?'Add 20 mm example cube':'Add 20-unit example cube',addExample],['Open model from My files',browse],['Open workspace from My files',()=>openWorkspace()],['Save workspace',()=>state.workspacePath?saveWorkspace():saveWorkspaceAs()],['Save workspace as…',saveWorkspaceAs]];
-  const nodes=[];for(const [label,action] of actions){const button=doc.createElement('button');button.type='button';button.className='codi-grid-action';button.textContent=label;button.addEventListener('click',()=>{menu.classList.remove('codi-grid-open');void action();});content.insertBefore(button,input.closest(mode==='kiri'?'#file-import':'input')||content.firstChild);nodes.push(button);}
-  const trigger=menu.firstElementChild,oldTab=trigger.getAttribute('tabindex'),oldRole=trigger.getAttribute('role');trigger.tabIndex=0;trigger.setAttribute('role','button');trigger.setAttribute('aria-haspopup','menu');
-  const toggle=e=>{if(e.target===menu||e.target===trigger){e.preventDefault();menu.classList.toggle('codi-grid-open');}},dismiss=e=>{if(!menu.contains(e.target))menu.classList.remove('codi-grid-open');},keys=e=>{if(e.key==='Escape')menu.classList.remove('codi-grid-open');else if(e.target===trigger&&(e.key==='Enter'||e.key===' ')){e.preventDefault();menu.classList.toggle('codi-grid-open');}},intercept=e=>{if(e.target===input){e.preventDefault();e.stopImmediatePropagation();menu.classList.remove('codi-grid-open');void browse();}};
+  const trigger=menu.firstElementChild,oldTab=trigger.getAttribute('tabindex'),oldRole=trigger.getAttribute('role');
+  const setMenuOpen=open=>{menu.classList.toggle('codi-grid-open',open);trigger.setAttribute('aria-expanded',String(open));};
+  trigger.tabIndex=0;trigger.setAttribute('role','button');trigger.setAttribute('aria-haspopup','menu');setMenuOpen(false);
+  const nodes=[];for(const [label,action] of actions){const button=doc.createElement('button');button.type='button';button.className='codi-grid-action';button.textContent=label;button.addEventListener('click',()=>{setMenuOpen(false);void action();});content.insertBefore(button,input.closest(mode==='kiri'?'#file-import':'input')||content.firstChild);nodes.push(button);}
+  const toggle=e=>{if(e.target===menu||trigger.contains(e.target)){e.preventDefault();setMenuOpen(!menu.classList.contains('codi-grid-open'));}};
+  const dismiss=e=>{if(!menu.contains(e.target))setMenuOpen(false);};
+  const keys=e=>{if(e.key==='Escape')setMenuOpen(false);else if(e.target===trigger&&(e.key==='Enter'||e.key===' ')){e.preventDefault();setMenuOpen(!menu.classList.contains('codi-grid-open'));}};
+  const intercept=e=>{if(e.target===input){e.preventDefault();e.stopImmediatePropagation();setMenuOpen(false);void browse();}};
   menu.addEventListener('click',toggle);doc.addEventListener('pointerdown',dismiss);doc.addEventListener('keydown',keys);doc.addEventListener('click',intercept,true);bar.hidden=true;pathDetails.hidden=true;workspaceDetails.hidden=true;
-  removeMenu=()=>{panels?.remove();meshBody?.classList.remove('codi-grid-panels-open');menu.classList.remove('codi-grid-file');menu.removeEventListener('click',toggle);doc.removeEventListener('pointerdown',dismiss);doc.removeEventListener('keydown',keys);doc.removeEventListener('click',intercept,true);nodes.forEach(n=>n.remove());style.remove();oldTab===null?trigger.removeAttribute('tabindex'):trigger.setAttribute('tabindex',oldTab);oldRole===null?trigger.removeAttribute('role'):trigger.setAttribute('role',oldRole);trigger.removeAttribute('aria-haspopup');for(const [node,display] of hidden)node.style.display=display;};return true;
+  removeMenu=()=>{panels?.remove();meshBody?.classList.remove('codi-grid-panels-open');menu.classList.remove('codi-grid-file');menu.removeEventListener('click',toggle);doc.removeEventListener('pointerdown',dismiss);doc.removeEventListener('keydown',keys);doc.removeEventListener('click',intercept,true);nodes.forEach(n=>n.remove());style.remove();oldTab===null?trigger.removeAttribute('tabindex'):trigger.setAttribute('tabindex',oldTab);oldRole===null?trigger.removeAttribute('role'):trigger.setAttribute('role',oldRole);trigger.removeAttribute('aria-haspopup');trigger.removeAttribute('aria-expanded');for(const [node,display] of hidden)node.style.display=display;};return true;
  }
  frame.addEventListener('load',()=>{tell('Starting '+frame.title+'…');const started=Date.now();function ready(){if(!valid())return;const doc=frame.contentDocument,curtain=doc?.getElementById('curtain');if(curtain&&getComputedStyle(curtain).display==='none'){const installed=installFileMenu();const tracking=installWorkspaceTracking();tell(mode==='kiri'?`To try slicing, ${installed?'choose File → ':''}Add 20 mm example cube. Save workspace to My files to keep your work.`:'Save workspace to My files for a recoverable snapshot. Later changes require another save.');if(!tracking)tell('Automatic workspace change tracking is unavailable. Save explicitly before closing.');if(['mirror','temporary'].includes(w.launchContext?.storage)&&w.launchContext.owner===owner)open(w.launchContext.path,{initialLoad:true});return;}if(Date.now()-started<45000)readyTimer=setTimeout(ready,250);else tell('Still starting. Check this device supports WebGL.');}ready();});
  body.append(bar,pathDetails,workspaceDetails,notice,uncertainNotice,retry,exportPanel,frame,status);
